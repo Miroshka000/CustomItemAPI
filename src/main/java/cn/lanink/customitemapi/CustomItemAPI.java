@@ -28,7 +28,7 @@ import java.util.*;
  */
 public class CustomItemAPI extends PluginBase implements Listener {
 
-    public static final String VERSION = "?";
+    public static final String VERSION = "1.0.9-PM1E-SNAPSHOT git-472be78";
 
     private static CustomItemAPI customItemAPI;
 
@@ -53,7 +53,10 @@ public class CustomItemAPI extends PluginBase implements Listener {
             ProtocolInfo.v1_20_10,
             ProtocolInfo.v1_20_30,
             ProtocolInfo.v1_20_50,
-            ProtocolInfo.v1_20_60
+            ProtocolInfo.v1_20_60,
+            ProtocolInfo.v1_20_70,
+            ProtocolInfo.v1_20_80,
+            ProtocolInfo.v1_21_0
     );
 
     public static CustomItemAPI getInstance() {
@@ -120,7 +123,13 @@ public class CustomItemAPI extends PluginBase implements Listener {
             RuntimeItemMapping.LegacyEntry legacyEntry = new RuntimeItemMapping.LegacyEntry(item.getId(), false, 0);
             runtime2Legacy.put(item.getId(), legacyEntry);
             identifier2Legacy.put(item.getName(), legacyEntry);
-            legacy2Runtime.put(fullId, new RuntimeItemMapping.RuntimeEntry(item.getName(), item.getId(), false));
+            RuntimeItemMapping.RuntimeEntry runtimeEntry;
+            if (this.isNKMOT) {
+                runtimeEntry = new RuntimeItemMapping.RuntimeEntry(item.getName(), item.getId(), false, true);
+            } else {
+                runtimeEntry = new RuntimeItemMapping.RuntimeEntry(item.getName(), item.getId(), false);
+            }
+            legacy2Runtime.put(fullId, runtimeEntry);
 
 
         } catch (Exception e) {
@@ -141,12 +150,21 @@ public class CustomItemAPI extends PluginBase implements Listener {
             paletteBuffer.putUnsignedVarInt(legacy2Runtime.size());
 
             for (RuntimeItemMapping.RuntimeEntry entry : legacy2Runtime.values()) {
+                boolean isCustom = false;
+                String identifier = entry.getIdentifier();
                 if (this.customItems.containsKey(entry.getRuntimeId())) {
-                    paletteBuffer.putString(("customitem:" + entry.getIdentifier()).toLowerCase());
+                    isCustom = true;
+                    identifier = ("customitem:" + entry.getIdentifier()).toLowerCase();
+                } else if (this.isNKMOT) {
+                    isCustom = entry.isCustomItem();
+                }
+
+                if (isCustom) {
+                    paletteBuffer.putString(identifier);
                     paletteBuffer.putLShort(entry.getRuntimeId());
                     paletteBuffer.putBoolean(true);
                 }else {
-                    paletteBuffer.putString(entry.getIdentifier());
+                    paletteBuffer.putString(identifier);
                     paletteBuffer.putLShort(entry.getRuntimeId());
                     paletteBuffer.putBoolean(false);
                 }
